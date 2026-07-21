@@ -226,6 +226,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         decorView = window.window!!.decorView
         contentView = decorView.findViewById(android.R.id.content)
         lastKnownConfig = resources.configuration
+        FcitxInputMethodServiceHolder.attach(this)
     }
 
     private fun handleFcitxEvent(event: FcitxEvent<*>) {
@@ -510,6 +511,43 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         if (shift) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_SHIFT_LEFT)
         if (ctrl) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_CTRL_LEFT)
         if (alt) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_ALT_LEFT)
+    }
+
+    /**
+     * Combination-key sender that also supports the Meta (Win/Cmd) modifier.
+     * Appended for the QuickSend IPC path; the legacy 4-arg
+     * [sendCombinationKeyEvents] above is intentionally left untouched.
+     */
+    fun sendKeyCombination(
+        keyEventCode: Int,
+        alt: Boolean,
+        ctrl: Boolean,
+        shift: Boolean,
+        meta: Boolean
+    ) {
+        var metaState = 0
+        if (alt) metaState = KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON
+        if (ctrl) metaState = metaState or KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+        if (shift) metaState = metaState or KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON
+        if (meta) metaState = metaState or KeyEvent.META_META_ON or KeyEvent.META_META_LEFT_ON
+        val eventTime = SystemClock.uptimeMillis()
+        if (alt) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_ALT_LEFT)
+        if (ctrl) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_CTRL_LEFT)
+        if (shift) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_SHIFT_LEFT)
+        if (meta) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_META_LEFT)
+        sendDownKeyEvent(eventTime, keyEventCode, metaState)
+        sendUpKeyEvent(eventTime, keyEventCode, metaState)
+        if (meta) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_META_LEFT)
+        if (shift) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_SHIFT_LEFT)
+        if (ctrl) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_CTRL_LEFT)
+        if (alt) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_ALT_LEFT)
+    }
+
+    /** Single down+up pair with an explicit metaState mask, for the QuickSend IPC path. */
+    fun sendKeyDownUpKey(keyEventCode: Int, metaState: Int = 0) {
+        val eventTime = SystemClock.uptimeMillis()
+        sendDownKeyEvent(eventTime, keyEventCode, metaState)
+        sendUpKeyEvent(eventTime, keyEventCode, metaState)
     }
 
     fun applySelectionOffset(offsetStart: Int, offsetEnd: Int = 0) {
@@ -1086,6 +1124,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onDestroy() {
+        FcitxInputMethodServiceHolder.detach(this)
         recreateInputViewPrefs.forEach {
             it.unregisterOnChangeListener(recreateInputViewListener)
         }

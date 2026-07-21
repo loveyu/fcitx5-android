@@ -146,6 +146,16 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name=".QuickSendService"
+            android:exported="true"
+            android:permission="${applicationId}.permission.IPC"
+            tools:ignore="SystemPermissionTypo">
+            <intent-filter>
+                <action android:name="${applicationId}.quicksend.IPC" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name=".provider.FcitxDataProvider"
             android:authorities="${applicationId}.provider"
