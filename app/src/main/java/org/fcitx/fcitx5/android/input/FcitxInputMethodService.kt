@@ -45,6 +45,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import org.fcitx.fcitx5.android.QuickSendStateBroadcaster
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.FcitxAPI
@@ -605,6 +606,12 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             Timber.w("Device does not support android.R.attr.colorAccent which it should have.")
         }
         InputFeedbacks.syncSystemPrefs()
+        QuickSendStateBroadcaster.notifyShown()
+    }
+
+    override fun onWindowHidden() {
+        super.onWindowHidden()
+        QuickSendStateBroadcaster.notifyHidden()
     }
 
     override fun onCreateInputView(): View? {

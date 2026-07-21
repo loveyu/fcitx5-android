@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import org.fcitx.fcitx5.android.common.ipc.IInputWindowStateListener
 import org.fcitx.fcitx5.android.common.ipc.IQuickSendService
 import org.fcitx.fcitx5.android.input.FcitxInputMethodServiceHolder
 import timber.log.Timber
@@ -62,6 +63,14 @@ class QuickSendService : Service() {
                 .onFailure { Timber.w(it, "QuickSend sendKeyCombination failed") }
                 .map { true }
                 .getOrDefault(false)
+        }
+
+        override fun registerInputWindowStateListener(listener: IInputWindowStateListener) {
+            QuickSendStateBroadcaster.register(listener)
+        }
+
+        override fun unregisterInputWindowStateListener(listener: IInputWindowStateListener) {
+            QuickSendStateBroadcaster.unregister(listener)
         }
     }
 
