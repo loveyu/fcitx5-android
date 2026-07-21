@@ -67,6 +67,12 @@ class QuickSendService : Service() {
 
         override fun registerInputWindowStateListener(listener: IInputWindowStateListener) {
             QuickSendStateBroadcaster.register(listener)
+            // 补发当前窗口状态：插件监听可能在 onWindowShown 之后才注册完成
+            // （悬浮窗服务启动/重连/被系统回收后重建），不补发会错过首个事件，
+            // 表现为悬浮按钮在键盘已弹出时不显示，需收起再弹出才出现。
+            if (FcitxInputMethodServiceHolder.instance?.isInputViewShown == true) {
+                runCatching { listener.onInputWindowShown() }
+            }
         }
 
         override fun unregisterInputWindowStateListener(listener: IInputWindowStateListener) {
