@@ -1137,6 +1137,12 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
         prefs.candidates.unregisterOnChangeListener(recreateCandidatesViewListener)
         ThemeManager.removeOnChangedListener(onThemeChangeListener)
+        // IMS 销毁发生在切换到其它输入法、被系统禁用或进程回收等场景。此时
+        // onWindowHidden 不一定会被回调，但本输入法窗口必然消失，故主动通知
+        // QuickSend 插件隐藏悬浮按钮，避免「切换输入法后悬浮窗残留」。
+        // 本类不声明 configChanges，方向等变化走 onConfigurationChanged 而非重建，
+        // 因此此处不会在屏幕旋转时误触发。
+        QuickSendStateBroadcaster.notifyHidden()
         super.onDestroy()
         // Fcitx might be used in super.onDestroy()
         FcitxDaemon.disconnect(javaClass.name)
