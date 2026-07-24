@@ -4,6 +4,8 @@
  */
 package org.fcitx.fcitx5.android.input.bar
 
+import android.content.ComponentName
+import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.util.Size
@@ -19,6 +21,7 @@ import android.widget.ViewAnimator
 import android.widget.inline.InlineContentView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -26,6 +29,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.fcitx.fcitx5.android.BuildConfig
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlag
 import org.fcitx.fcitx5.android.core.CapabilityFlags
@@ -105,6 +109,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val toolbarNumRowOnPassword by prefs.keyboard.toolbarNumRowOnPassword
     private val showVoiceInputButton by prefs.keyboard.showVoiceInputButton
     private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
+    private val useQuickSendVoicePlugin by prefs.keyboard.useQuickSendVoicePlugin
 
     private var clipboardTimeoutJob: Job? = null
 
@@ -259,6 +264,17 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val switchToVoiceInputCallback = View.OnClickListener {
         val (id, subtype) = voiceInputSubtype ?: return@OnClickListener
         InputMethodUtil.switchInputMethod(service, id, subtype)
+    }
+
+    // 插件模式：点 mic 启动 quicksend 插件的 Sherpa 本地语音浮层，
+    // 而非切换到 Google 等语音输入法子类型。
+    private val startQuickSendVoiceCallback = View.OnClickListener {
+        val suffix = if (BuildConfig.DEBUG) ".debug" else ""
+        val pkg = "org.fcitx.fcitx5.android.plugin.quicksend$suffix"
+        val intent = Intent("org.fcitx.fcitx5.android.plugin.quicksend.voice.START").apply {
+            component = ComponentName(pkg, "$pkg.voice.VoiceOverlayService")
+        }
+        runCatching { ContextCompat.startForegroundService(service, intent) }
     }
 
     private val idleUi: IdleUi by lazy {
@@ -442,11 +458,18 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             idleUi.inlineSuggestionsBar.clear()
         }
         voiceInputSubtype = InputMethodUtil.findVoiceSubtype(preferredVoiceInput)
+        val notPassword = !capFlags.has(CapabilityFlag.Password)
+        val usePluginVoice = useQuickSendVoicePlugin && notPassword
+        // 插件模式下无需语音输入法子类型即可显示 mic
         val shouldShowVoiceInput =
-            showVoiceInputButton && voiceInputSubtype != null && !capFlags.has(CapabilityFlag.Password)
+            showVoiceInputButton && notPassword && (usePluginVoice || voiceInputSubtype != null)
         idleUi.setHideKeyboardIsVoiceInput(
             shouldShowVoiceInput,
-            if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback
+            when {
+                !shouldShowVoiceInput -> hideKeyboardCallback
+                usePluginVoice -> startQuickSendVoiceCallback
+                else -> switchToVoiceInputCallback
+            }
         )
         evalIdleUiState()
     }

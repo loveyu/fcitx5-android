@@ -52,6 +52,7 @@ import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.core.FormattedText
+import org.fcitx.fcitx5.android.core.TextFormatFlag
 import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.core.ScancodeMapping
@@ -1028,6 +1029,15 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         composing.clear()
         composingText = FormattedText.Empty
         ic.finishComposingText()
+    }
+
+    /**
+     * Set composing (preedit) text from an external source (e.g. the QuickSend
+     * voice plugin streaming partial ASR results). The text is underlined while
+     * composing, and a subsequent [commitText] replaces it in place.
+     */
+    fun setComposingText(text: String) {
+        updateComposingText(FormattedText(arrayOf(text), intArrayOf(TextFormatFlag.Underline.flag), -1))
     }
 
     @SuppressLint("RestrictedApi")

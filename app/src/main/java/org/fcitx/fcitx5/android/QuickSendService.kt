@@ -43,6 +43,27 @@ class QuickSendService : Service() {
             }
         }
 
+        override fun setComposingText(text: String): Boolean {
+            val ims = FcitxInputMethodServiceHolder.instance ?: run {
+                Timber.w("QuickSend: no active IMS, drop setComposingText")
+                return false
+            }
+            return runBlocking {
+                withTimeoutOrNull(COMMIT_TIMEOUT_MS) {
+                    ims.lifecycleScope.launch { ims.setComposingText(text) }.join()
+                } != null
+            }
+        }
+
+        override fun finishComposingText(): Boolean {
+            val ims = FcitxInputMethodServiceHolder.instance ?: return false
+            return runBlocking {
+                withTimeoutOrNull(COMMIT_TIMEOUT_MS) {
+                    ims.lifecycleScope.launch { ims.finishComposing() }.join()
+                } != null
+            }
+        }
+
         override fun sendKeyDownUpKey(keyCode: Int, metaState: Int): Boolean {
             val ims = FcitxInputMethodServiceHolder.instance ?: return false
             return runCatching { ims.sendKeyDownUpKey(keyCode, metaState) }

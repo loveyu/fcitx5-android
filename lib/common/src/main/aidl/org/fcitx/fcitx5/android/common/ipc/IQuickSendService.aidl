@@ -25,6 +25,16 @@ interface IQuickSendService {
     boolean sendKeyCombination(int keyCode, boolean alt, boolean ctrl, boolean shift, boolean meta);
 
     /**
+     * Set composing (preedit) text in the currently focused editor. The text is
+     * shown underlined while composing; a subsequent [commitText] replaces it.
+     * Used by the QuickSend voice plugin to stream partial recognition results.
+     */
+    boolean setComposingText(String text);
+
+    /** Finish composing, leaving whatever was composed committed in place. */
+    boolean finishComposingText();
+
+    /**
      * Subscribe to IME window visibility changes. Notifications are delivered
      * to [listener] for as long as it remains registered and the binder is
      * alive; duplicate registrations of the same listener are ignored.

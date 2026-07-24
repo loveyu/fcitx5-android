@@ -148,6 +148,15 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
             R.string.preferred_voice_input, "preferred_voice_input", ""
         ) { showVoiceInputButton.getValue() }
 
+        /**
+         * Route the keyboard voice button to the QuickSend plugin's Sherpa-ONNX
+         * local recognizer (overlay) instead of switching to a voice IME subtype.
+         */
+        val useQuickSendVoicePlugin =
+            switch(R.string.use_quicksend_voice_plugin, "use_quicksend_voice_plugin", true) {
+                showVoiceInputButton.getValue()
+            }
+
         val expandKeypressArea =
             switch(R.string.expand_keypress_area, "expand_keypress_area", false)
         val swipeSymbolDirection = enumList(
