@@ -1,0 +1,13 @@
+# 0.1.4 - Core Engine Update and Compatibility Improvements
+
+## Highlights
+
+- Updated the bundled fcitx5 core engine, which introduces the new Temp Mode API to unify temporary mode implementations (clipboard, unicode, quick phrase), overlay message support, and various input handling fixes.
+- Updated fcitx5-chinese-addons with dictionary and pinyin matching improvements.
+- Better compatibility on devices where android.R.attr.colorAccent is unavailable: the text highlight color now falls back to the default instead of breaking.
+
+## Changes
+
+- Refactored BaseKeyboard custom touch event dispatching for more reliable gesture handling
+- Internal refactoring of the setup UI (removed public MutableLiveData exposure)
+- Various engine-level fixes: candidate filtering on non-zero pages, CapsLock state tracking, password hint handling
